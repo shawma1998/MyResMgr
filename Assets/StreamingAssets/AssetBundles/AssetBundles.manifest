@@ -1,0 +1,16 @@
+ManifestFileVersion: 0
+CRC: 384032438
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: u3d3.u3d
+      Dependencies: {}
+    Info_1:
+      Name: u3d1.u3d
+      Dependencies: {}
+    Info_2:
+      Name: u3d2.u3d
+      Dependencies: {}
+    Info_3:
+      Name: u3d4.u3d
+      Dependencies: {}
