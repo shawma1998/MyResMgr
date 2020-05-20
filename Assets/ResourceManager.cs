@@ -23,7 +23,8 @@ public class ResourceManager : MonoBehaviour {
 
     public static ResourceManager Instance;
 
-
+    
+    private AssetBundleManifest manifest;
     public string fileMain;
 
     private void Awake()
@@ -35,6 +36,13 @@ public class ResourceManager : MonoBehaviour {
     private void Start()
     {
         fileMain = Application.streamingAssetsPath + "/AssetBundles/";
+
+        AssetBundle manifestAB = AssetBundle.LoadFromFile(fileMain+ "AssetBundles");  // 加载总ManifestAssetBundle
+        manifest = (AssetBundleManifest)manifestAB.LoadAsset("AssetBundleManifest");
+
+        //加载主配置文件
+
+
         //print(fileMain);
     }
 
@@ -81,7 +89,8 @@ public class ResourceManager : MonoBehaviour {
                 //print("loading    " + abName+"    "+ loadedABClass[abName]);
                 yield return new WaitForEndOfFrame();
             }
-            //print(loadedABClass[abName]);
+
+            //创建一个资源请求
             var myab = loadedABClass[abName];
 
             resourceRequest.abName = abName;
@@ -97,11 +106,9 @@ public class ResourceManager : MonoBehaviour {
 
             //某个ab包占位，开始加载
             loadedABClass.Add(abName, null);
-            //TODO加载所有依赖包
 
             //根据传进来的ab包名 加载ab包
             AssetBundleCreateRequest abRequest = AssetBundle.LoadFromFileAsync(fileMain + abName);
-           // print(fileMain + abName);
             //等待协程返回
             yield return abRequest;
             
@@ -112,28 +119,35 @@ public class ResourceManager : MonoBehaviour {
                 yield break;
             }
 
+            ResourceABClass resourceAB= new ResourceABClass(abRequest.assetBundle);
+
+
+
             //该请求的request对象封装
             resourceRequest.abName = abRequest.assetBundle.name;
             resourceRequest.fileName = fileName;
             resourceRequest.func = func;
             resourceRequest.level = level;
-            resourceRequest.resourceAB = new ResourceABClass(abRequest.assetBundle);
+            resourceRequest.resourceAB = resourceAB;
+
+
+            //TODO 加载依赖包
+
+            //等待获得依赖结束 
+
+
+
 
             //将当前加载成功的ab包，放入dic维护，下次可以直接使用
-            //print("112----->" + abName);     
+            //获得完依赖后 ，把坑填上
 
+            loadedABClass[abName] = resourceAB;
 
-            loadedABClass[abName] = new ResourceABClass(abRequest.assetBundle);
-
-            //print("115------>" + loadedABClass.ContainsKey(abName));
-            //新建一个资源加载请求
-
-            //--print(request.assetBundle.name);
-
-            //将资源加载请求resourceRequest放到资源中心队列中 根据优先等级
+            yield return GetIndep(resourceAB.name);
 
         }
 
+        //将资源加载请求resourceRequest放到资源中心队列中 根据优先等级
         if (level == RequestLevel.High)
         {
             resourceRequests_high.Enqueue(resourceRequest);
@@ -147,6 +161,93 @@ public class ResourceManager : MonoBehaviour {
     }
 
 
+
+
+
+
+
+
+
+
+
+
+    /// <summary>
+    /// 加载资源包
+    /// </summary>
+    /// <param name="abName"></param>
+    /// <param name="func"></param>
+    /// <returns></returns>
+    IEnumerator LoadAB(string abName,Action<ResourceABClass> func)
+    {
+        //占坑
+        loadedABClass.Add(abName, null);
+
+        //根据传进来的ab包名 加载ab包
+        AssetBundleCreateRequest abRequest = AssetBundle.LoadFromFileAsync(fileMain + abName);
+
+        yield return abRequest;
+
+        //将获得到的封装AB包返回
+        if (abRequest.assetBundle == null)
+        {
+            //停止协程--没有加载到ab包
+            Debug.LogError("加载失败，没有找到对应的ab包");
+            yield break;
+        }
+
+        ResourceABClass resourceAB = new ResourceABClass(abRequest.assetBundle);
+
+        //回调，将生成的ab包节点传出去
+        func(resourceAB);
+
+    }
+
+    /// <summary>
+    /// 获得AB包的所有依赖
+    /// </summary>
+    /// <param name="rootAB">根AB包名字</param>
+    /// <returns></returns>
+    IEnumerator GetIndep(string abName)
+    {
+
+
+
+        //判断Dic中是否有rootABname
+        if (loadedABClass.ContainsKey(abName))
+        {
+            //不用操作，已经加载过了
+            //
+            //while(loadedABClass[abName] == null)
+            //{
+            //    yield return new WaitForEndOfFrame();
+            //}
+        }
+        else
+        {
+            //开启协程加载加载资源后放进去
+            yield return StartCoroutine(LoadAB(abName, (resAB) => {
+                //把加载后的封装ab资源 放到dic中，表示已加载
+                loadedABClass[resAB.name] = resAB;
+            }));
+        }
+
+        string[] indep_strs = manifest.GetDirectDependencies(abName);
+
+        if(indep_strs.Length > 0)
+        {
+            foreach (var indep in indep_strs)
+            {
+                yield return StartCoroutine(GetIndep(indep));
+            }
+        }
+        else
+        {
+            yield break;
+        }
+
+        
+
+    }
 
     private void Update()
     {
@@ -210,6 +311,22 @@ public class ResourceManager : MonoBehaviour {
 }
 
 
+
+/// <summary>
+/// 异步创建ResourceAB包的协程返回类
+/// </summary>
+class CreateResourceABClassRequest : AsyncOperation
+{
+
+    public ResourceABClass resource;
+
+    public CreateResourceABClassRequest(ResourceABClass resource)
+    {
+        this.resource = resource;
+    }
+}
+
+
 /// <summary>
 /// 每次资源请求封装
 /// </summary>
@@ -229,12 +346,15 @@ public class ResourceRequest
 /// </summary>
 public class ResourceABClass
 {
-    public ResourceABClass[] DepABClass;
+    public List<ResourceABClass> DepABClass ;
     public AssetBundle ab;
+    public string name;
 
     public ResourceABClass(AssetBundle ab)
     {
         this.ab = ab;
+        this.name = ab.name;
+        this.DepABClass = new List<ResourceABClass>();
     }
 
     public UnityEngine.Object GetResource(string resName)

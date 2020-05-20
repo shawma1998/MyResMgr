@@ -1,0 +1,16 @@
+ManifestFileVersion: 0
+CRC: 2376186652
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: c99e0f652014d4e51c10443b30dde4d6
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 6759894fca659e2049f05064db45ce61
+HashAppended: 0
+ClassTypes:
+- Class: 28
+  Script: {instanceID: 0}
+Assets:
+- Assets/5/gamepad_188.34285714286px_1204536_easyicon.net.png
+Dependencies: []

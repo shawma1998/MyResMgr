@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
+using System;
 
 public class TestLoad : MonoBehaviour
 {
@@ -17,20 +18,28 @@ public class TestLoad : MonoBehaviour
     {
         print("本次加载1000个资源");
         start = Time.time;
-        for (int i = 0; i < 1000; i++)
+        for (int i = 0; i <1000; i++)
         {
 
-            int ramdomIndex = Random.Range(1, 5);
-            float ramdomLevel = Random.Range(1, 3);
+            int ramdomIndex = UnityEngine.Random.Range(1, 5);
+            float ramdomLevel = UnityEngine.Random.Range(1, 3);
             RequestLevel level = ramdomLevel == 1 ? RequestLevel.High : RequestLevel.Low;
 
             LoadRes(ramdomIndex, level);
         }
+
+        
+        //ResourceManager.Instance.GetResource("cube.u3d", "Cube", (obj) => {
+        //    Instantiate(obj);
+        //});
+
         //for (int i = 0; i < 100; i++)
         //{
         //    LoadRes(1, RequestLevel.High);
         //}
     }
+
+    
 
     void LoadRes(int abIndex, RequestLevel level)
     {

@@ -1,5 +1,5 @@
 ManifestFileVersion: 0
-CRC: 384032438
+CRC: 456867370
 AssetBundleManifest:
   AssetBundleInfos:
     Info_0:
@@ -13,4 +13,19 @@ AssetBundleManifest:
       Dependencies: {}
     Info_3:
       Name: u3d4.u3d
+      Dependencies: {}
+    Info_4:
+      Name: cube.u3d
+      Dependencies:
+        Dependency_0: material.u3d
+    Info_5:
+      Name: material.u3d
+      Dependencies:
+        Dependency_0: texture.u3d
+        Dependency_1: tex2.u3d
+    Info_6:
+      Name: texture.u3d
+      Dependencies: {}
+    Info_7:
+      Name: tex2.u3d
       Dependencies: {}
